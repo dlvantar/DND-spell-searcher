@@ -1,0 +1,662 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>法术检索 · 玩家手册 PHB</title>
+<style>
+:root{
+  --paper:#f3eee4; --paper2:#e9e2d4;
+  --card:#fffdf8; --card2:#faf6ee;
+  --ink:#221d17; --ink2:#4a4238; --muted:#8b8172;
+  --line:#e4dac6; --line2:#d6c9b0;
+  --red:#b3261e; --red-soft:#c8453a;
+  --gold:#9a7b3f;
+  --shadow:0 1px 2px rgba(60,45,20,.06), 0 8px 24px -12px rgba(60,45,20,.25);
+  --serif:"Noto Serif SC","Source Han Serif SC","Songti SC","STSong","SimSun",serif;
+  --sans:"Inter","Segoe UI","PingFang SC","Microsoft YaHei",system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; font-family:var(--sans); color:var(--ink);
+  background:
+    radial-gradient(1200px 600px at 15% -10%, #fbf7ef 0%, transparent 60%),
+    radial-gradient(900px 500px at 110% 110%, #efe7d8 0%, transparent 55%),
+    var(--paper);
+  -webkit-font-smoothing:antialiased;
+}
+.app{height:100%; display:flex; flex-direction:column; max-width:1240px; margin:0 auto; padding:0 22px}
+
+/* ---------- header ---------- */
+header{flex:none; padding:22px 0 0}
+.brandrow{display:flex; align-items:flex-end; gap:16px; flex-wrap:wrap}
+.brand{display:flex; align-items:baseline; gap:12px}
+.sigil{color:var(--red); font-size:20px; line-height:1; transform:translateY(-2px)}
+h1{font-family:var(--serif); font-size:26px; letter-spacing:.14em; margin:0; font-weight:700}
+.sub{font-size:12.5px; color:var(--muted); letter-spacing:.04em; padding-bottom:3px}
+.sub b{color:var(--ink2); font-weight:600}
+.sub .sep{opacity:.45; margin:0 6px}
+
+/* ---------- search ---------- */
+.searchwrap{position:relative; margin:16px 0 6px}
+.search{
+  display:flex; align-items:center; gap:10px; background:var(--card);
+  border:1px solid var(--line2); border-radius:12px; padding:0 12px 0 14px;
+  box-shadow:var(--shadow); transition:border-color .15s, box-shadow .15s;
+}
+.search:focus-within{border-color:#c8a96e; box-shadow:0 0 0 3px rgba(200,169,110,.16), var(--shadow)}
+.search .icon{width:19px; height:19px; flex:none; fill:none; stroke:var(--muted); stroke-width:2.1; stroke-linecap:round}
+#q{
+  flex:1; border:0; outline:0; background:transparent; font:inherit; font-size:16.5px;
+  padding:15px 0; color:var(--ink); min-width:0;
+}
+#q::placeholder{color:#a79c8b}
+.kbd{font-size:11px; color:var(--muted); border:1px solid var(--line2); border-radius:5px; padding:2px 6px; background:var(--card2)}
+.search:focus-within .kbd{opacity:0}
+.clear{border:0; background:transparent; cursor:pointer; color:var(--muted); font-size:15px; padding:6px; border-radius:6px; display:none}
+.clear:hover{background:var(--paper2); color:var(--ink)}
+.search.has-value .clear{display:block}
+.tips{font-size:12px; color:var(--muted); margin:-2px 2px 0}
+.tips code{font-family:ui-monospace,Consolas,monospace; background:var(--card2); border:1px solid var(--line); border-radius:4px; padding:1px 5px; color:var(--ink2)}
+
+/* ---------- suggestions ---------- */
+.suggest{
+  position:absolute; left:0; right:0; top:calc(100% - 2px); z-index:40;
+  background:var(--card); border:1px solid var(--line2); border-radius:12px;
+  box-shadow:0 18px 40px -18px rgba(50,35,10,.45), 0 2px 6px rgba(50,35,10,.08);
+  overflow:hidden; padding:6px;
+}
+.suggest[hidden]{display:none}
+.sg{display:flex; align-items:center; gap:10px; padding:9px 10px; border-radius:8px; cursor:pointer}
+.sg .lv{flex:none; width:34px; text-align:center; font-size:11px; color:var(--gold); border:1px solid var(--line2); border-radius:5px; padding:2px 0; background:var(--card2)}
+.sg .nm{font-family:var(--serif); font-size:15.5px; letter-spacing:.02em; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis}
+.sg .nm .en{font-family:var(--sans); font-size:12px; color:var(--muted); margin-left:8px; letter-spacing:0}
+.sg .sc{margin-left:auto; font-size:11.5px; color:var(--muted); flex:none; white-space:nowrap; padding-left:8px}
+.sg[aria-selected="true"]{background:#f4e9d5; box-shadow:inset 0 0 0 1px #e6d4ae}
+.sg:hover{background:#f6efe1}
+.sg .nm mark{color:var(--red); background:none; font-weight:700}
+.sg .nm .en mark{color:var(--red); font-weight:600}
+.sg-empty{padding:14px 12px; color:var(--muted); font-size:13px}
+.sg-foot{display:flex; gap:14px; padding:7px 10px 3px; margin-top:4px; border-top:1px solid var(--line); font-size:11px; color:var(--muted)}
+
+/* ---------- filters ---------- */
+.filters{flex:none; display:flex; align-items:center; gap:14px; flex-wrap:wrap; padding:6px 0 14px}
+.chips{display:flex; gap:6px; flex-wrap:wrap}
+.chip{
+  border:1px solid var(--line2); background:var(--card); color:var(--ink2);
+  font:inherit; font-size:12.5px; padding:5px 11px; border-radius:999px; cursor:pointer;
+  transition:.12s; white-space:nowrap;
+}
+.chip:hover{background:#f7f1e4}
+.chip.on{background:var(--ink); color:#fdfaf3; border-color:var(--ink)}
+.selects{display:flex; align-items:center; gap:8px; margin-left:auto; flex-wrap:wrap}
+select{
+  font:inherit; font-size:12.5px; color:var(--ink2); background:var(--card);
+  border:1px solid var(--line2); border-radius:8px; padding:6px 9px; cursor:pointer; outline:none;
+}
+select:focus{border-color:#c8a96e}
+.chk{display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--ink2); cursor:pointer; user-select:none}
+.chk input{accent-color:var(--red); width:14px; height:14px}
+
+/* ---------- main layout ---------- */
+main{flex:1; min-height:0; display:grid; grid-template-columns:392px minmax(0,1fr); gap:20px; padding-bottom:20px}
+.pane{min-height:0; background:var(--card); border:1px solid var(--line); border-radius:14px; box-shadow:var(--shadow)}
+.listpane{display:flex; flex-direction:column; overflow:hidden}
+.count{flex:none; padding:12px 16px 10px; font-size:12px; color:var(--muted); border-bottom:1px solid var(--line); letter-spacing:.03em}
+.count b{color:var(--ink); font-weight:600}
+.list{flex:1; overflow-y:auto; margin:0; padding:6px; list-style:none; scrollbar-width:thin}
+.list::-webkit-scrollbar{width:9px}
+.list::-webkit-scrollbar-thumb{background:#dfd3bd; border-radius:9px; border:3px solid var(--card)}
+.row{
+  display:flex; align-items:baseline; gap:10px; padding:9px 10px; border-radius:8px;
+  cursor:pointer; border:1px solid transparent;
+}
+.row:hover{background:#f8f2e6}
+.row.sel{background:#f5ecdb; border-color:#e3d3b3}
+.row .lv{
+  flex:none; width:36px; text-align:center; font-size:10.5px; color:var(--gold);
+  border:1px solid var(--line2); border-radius:5px; padding:2px 0; background:var(--card2);
+  letter-spacing:0; transform:translateY(-1px);
+}
+.row .nm{font-family:var(--serif); font-size:15px; letter-spacing:.02em; line-height:1.5; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis}
+.row .en{font-family:var(--sans); font-size:11.5px; color:var(--muted); margin-left:7px}
+.row .sc{margin-left:auto; font-size:11px; color:var(--muted); flex:none; padding-left:8px; white-space:nowrap}
+.row mark{color:var(--red); background:none; font-weight:700}
+.row .en mark{color:var(--red); font-weight:600}
+.row .ritual{font-size:10px; color:var(--gold); border:1px solid #ddcba4; background:#fbf4e4; border-radius:4px; padding:0 4px; margin-left:6px; vertical-align:1px}
+
+.empty{padding:30px 18px; color:var(--muted); font-size:13.5px; line-height:2; text-align:center; display:none}
+.empty.show{display:block}
+.empty kbd{font-family:var(--sans); border:1px solid var(--line2); border-radius:5px; padding:1px 6px; background:var(--card2); font-size:12px; color:var(--ink2)}
+.empty .ex-wrap{margin-top:14px}
+
+/* ---------- detail ---------- */
+.detailpane{overflow-y:auto; padding:26px 30px 40px; scrollbar-width:thin}
+.detailpane::-webkit-scrollbar{width:10px}
+.detailpane::-webkit-scrollbar-thumb{background:#e2d6c0; border-radius:9px; border:3px solid var(--card)}
+
+.d-head{border-bottom:1px solid var(--line); padding-bottom:16px; margin-bottom:18px}
+.d-title{font-family:var(--serif); font-size:31px; letter-spacing:.06em; margin:0 0 4px; line-height:1.3}
+.d-en{font-size:14px; color:var(--muted); letter-spacing:.03em}
+.d-py{font-family:ui-monospace,Consolas,monospace; font-size:11.5px; color:#a99d89; margin-left:14px; letter-spacing:.08em}
+.d-badges{display:flex; gap:8px; flex-wrap:wrap; margin-top:14px}
+.badge{font-size:11.5px; padding:3px 9px; border-radius:999px; border:1px solid var(--line2); background:var(--card2); color:var(--ink2)}
+.badge.lv{color:#7a5a1e; border-color:#e2cd9f; background:#fbf3e1}
+.badge.school{color:#42586b; border-color:#c9d6e0; background:#f1f6fa}
+.badge.ritual{color:#6b4b7a; border-color:#dccbe4; background:#f8f2fb}
+.badge.cls{color:#4d5a44; border-color:#cfd8c6; background:#f3f7ef}
+.badge.page{margin-left:auto; color:var(--muted)}
+
+.meta{display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line); border-radius:10px; overflow:hidden; margin-bottom:24px}
+.meta div{background:var(--card); padding:11px 14px}
+.meta dt{font-size:11px; color:var(--muted); letter-spacing:.06em; margin-bottom:4px}
+.meta dd{margin:0; font-size:13.5px; color:var(--ink); line-height:1.6}
+
+.desc{font-size:14.6px; line-height:2.05; color:var(--ink2); letter-spacing:.012em}
+.desc p{margin:0 0 14px; text-indent:2em}
+.desc p.bullet{text-indent:0; padding-left:1.1em; position:relative; margin-bottom:10px}
+.desc p.bullet::before{content:""; position:absolute; left:.1em; top:.95em; width:5px; height:5px; border-radius:50%; background:#c9b48a}
+.desc p.upcast{text-indent:0; border-left:2px solid #e3d2ae; padding:2px 0 2px 14px; color:#6f6555; font-size:13.8px; background:linear-gradient(90deg,#fbf6ea,transparent 70%); border-radius:0 6px 6px 0}
+.tablewrap{overflow-x:auto; margin:6px 0 20px}
+table.phbtable{border-collapse:collapse; width:100%; font-size:13px; background:var(--card); table-layout:auto}
+table.phbtable th:first-child, table.phbtable td:first-child{width:1%; white-space:nowrap}
+table.phbtable caption{caption-side:top; text-align:left; font-family:var(--serif); font-size:13.5px; color:var(--ink); padding:0 0 8px; letter-spacing:.05em}
+table.phbtable th{text-align:left; font-weight:600; color:var(--ink); font-size:12px; letter-spacing:.04em; border-bottom:1.5px solid #d9c9a8; padding:7px 10px; background:#faf4e7; white-space:nowrap}
+table.phbtable td{border-bottom:1px solid var(--line); padding:7px 10px; color:var(--ink2); vertical-align:top}
+table.phbtable tbody tr:nth-child(even) td{background:#fdfaf3}
+table.phbtable tbody tr:last-child td{border-bottom:1px solid #d9c9a8}
+
+/* welcome / empty detail */
+.welcome{max-width:560px}
+.welcome h2{font-family:var(--serif); font-size:20px; letter-spacing:.08em; margin:0 0 14px; font-weight:600}
+.welcome p{font-size:13.5px; line-height:2; color:var(--ink2); margin:0 0 10px}
+.welcome .examples{display:flex; gap:8px; flex-wrap:wrap; margin-top:18px}
+.ex-btn{font:inherit; font-size:12.5px; padding:6px 13px; border-radius:999px; border:1px dashed var(--line2); background:var(--card2); color:var(--ink2); cursor:pointer}
+.ex-btn:hover{border-style:solid; border-color:#c8a96e; color:var(--ink); background:#faf1e0}
+.welcome .rule{margin:22px 0; height:1px; background:var(--line)}
+.welcome ul{margin:0; padding-left:18px; font-size:13px; line-height:2.1; color:var(--ink2)}
+.welcome ul b{color:var(--ink); font-weight:600}
+.welcome .src{margin-top:22px; font-size:11.5px; color:var(--muted)}
+
+/* ---------- responsive ---------- */
+@media (max-width:900px){
+  .app{height:auto; padding:0 14px}
+  header{padding-top:16px}
+  h1{font-size:21px}
+  .sub{font-size:11.5px}
+  main{grid-template-columns:1fr; gap:14px; min-height:0}
+  .listpane{max-height:52vh}
+  .detailpane{padding:20px 18px 30px; max-height:none}
+  .d-title{font-size:25px}
+  .meta{grid-template-columns:1fr}
+  .selects{margin-left:0}
+  .filters{gap:10px}
+}
+@media (max-width:520px){
+  .row .sc{display:none}
+  .d-title{font-size:22px}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brandrow">
+      <div class="brand">
+        <span class="sigil">✦</span>
+        <h1>法术检索</h1>
+      </div>
+      <div class="sub">
+        龙与地下城 5e<span class="sep">·</span>玩家手册 PHB
+        <span class="sep">·</span>第 11 章<span class="sep">·</span><b id="total">—</b> 个法术
+      </div>
+    </div>
+
+    <div class="searchwrap">
+      <div class="search" id="searchbox">
+        <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg>
+        <input id="q" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false"
+               aria-controls="suggest" aria-activedescendant="" autocomplete="off" spellcheck="false"
+               placeholder="输入法术名的一部分：中文 / English / 拼音…">
+        <kbd class="kbd">/</kbd>
+        <button id="clear" class="clear" type="button" aria-label="清空">✕</button>
+      </div>
+      <div class="suggest" id="suggest" role="listbox" hidden></div>
+    </div>
+    <div class="tips">可用 <code>火</code>、<code>fire</code>、<code>huoqiu</code> 或首字母 <code>hqs</code> 搜索；匹配的字会标红。</div>
+  </header>
+
+  <div class="filters">
+    <div class="chips" id="levelChips"></div>
+    <div class="selects">
+      <select id="schoolSel" aria-label="学派"></select>
+      <select id="classSel" aria-label="职业"></select>
+      <label class="chk"><input type="checkbox" id="ritualOnly"> 仅仪式</label>
+    </div>
+  </div>
+
+  <main>
+    <section class="pane listpane" aria-label="检索结果">
+      <div class="count" id="count"></div>
+      <ul class="list" id="list" role="listbox" aria-label="法术列表"></ul>
+      <div class="empty" id="empty"></div>
+    </section>
+    <section class="pane detailpane" id="detail" aria-live="polite"></section>
+  </main>
+</div>
+
+<script id="spell-data" type="application/json">/*__SPELL_DATA__*/</script>
+<script>
+(function(){
+"use strict";
+const DATA = JSON.parse(document.getElementById('spell-data').textContent);
+const SPELLS = DATA.spells;
+const CLASSES = DATA.classes;
+const SCHOOLS = DATA.schools;
+
+/* ---------- index ---------- */
+function normEn(str){
+  let out = '', map = [];
+  for (let i = 0; i < str.length; i++){
+    const c = str[i].toLowerCase();
+    if (/[a-z0-9]/.test(c)){ out += c; map.push(i); }
+  }
+  return { str: out, map: map };
+}
+for (const s of SPELLS){
+  s._en = normEn(s.en);
+  s._toks = s.pyc.map(t => /^[a-z]+$/i.test(t) ? t.toLowerCase() : '');
+  s._py = s._toks.join('');
+  s._pyi = s._toks.map(t => t ? t[0] : '').join('');
+  s._lvl = s.level === 0 ? '戏法' : s.level + ' 环';
+}
+
+const esc = str => String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function allIndexes(hay, needle, limit){
+  const out = []; if (!needle) return out;
+  let i = hay.indexOf(needle);
+  while (i >= 0 && out.length < (limit || 6)){ out.push([i, i + needle.length]); i = hay.indexOf(needle, i + 1); }
+  return out;
+}
+
+function pinyinSpans(toks, from, to, initials){
+  const spans = []; let pos = 0;
+  for (let i = 0; i < toks.length; i++){
+    const len = initials ? (toks[i] ? 1 : 0) : toks[i].length;
+    if (len && pos + len > from && pos < to){ spans.push([i, i + 1]); }
+    pos += len;
+  }
+  // merge adjacent char spans
+  const merged = [];
+  for (const sp of spans){
+    const last = merged[merged.length - 1];
+    if (last && last[1] === sp[0]) last[1] = sp[1]; else merged.push([sp[0], sp[1]]);
+  }
+  return merged;
+}
+
+/* ---------- search ---------- */
+function search(raw){
+  const q = raw.trim();
+  if (!q) return SPELLS.map(s => ({ s: s, rank: 0, zh: [], en: [] }));
+  const qn = normEn(q).str;
+  const ql = q.toLowerCase().replace(/[^a-z]/g, '');
+  const out = [];
+  for (const s of SPELLS){
+    let rank = 99, zh = [], en = [];
+    const zi = s.zh.indexOf(q);
+    if (zi >= 0){
+      zh = allIndexes(s.zh, q);
+      rank = zi === 0 ? 0 : 1;
+    } else if (qn && s._en.str.indexOf(qn) >= 0){
+      const ei = s._en.str.indexOf(qn);
+      en = [];
+      let k = s._en.str.indexOf(qn);
+      while (k >= 0 && en.length < 6){
+        en.push([s._en.map[k], s._en.map[k + qn.length - 1] + 1]);
+        k = s._en.str.indexOf(qn, k + 1);
+      }
+      rank = ei === 0 ? 2 : 3;
+    } else if (ql){
+      const pi = s._py.indexOf(ql);
+      const ii = s._pyi.indexOf(ql);
+      if (pi >= 0){
+        zh = pinyinSpans(s._toks, pi, pi + ql.length, false);
+        rank = pi === 0 ? 4 : 5;
+      } else if (ii >= 0){
+        zh = pinyinSpans(s._toks, ii, ii + ql.length, true);
+        rank = ii === 0 ? 4 : 5;
+      }
+    }
+    if (rank < 99) out.push({ s: s, rank: rank, zh: zh, en: en });
+  }
+  out.sort((a, b) => a.rank - b.rank
+      || (a.s.level - b.s.level)
+      || (a.s.zh.length - b.s.zh.length)
+      || a.s.zh.localeCompare(b.s.zh, 'zh'));
+  return out;
+}
+
+/* ---------- filters ---------- */
+const state = { query:'', level:'all', school:'all', cls:'all', ritual:false, sel:null, active:-1, results:[] };
+
+function passFilter(s){
+  if (state.level !== 'all' && s.level !== state.level) return false;
+  if (state.school !== 'all' && s.school !== state.school) return false;
+  if (state.cls !== 'all' && s.classes.indexOf(state.cls) < 0) return false;
+  if (state.ritual && !s.ritual) return false;
+  return true;
+}
+
+/* ---------- render helpers ---------- */
+function hi(text, spans){
+  if (!spans || !spans.length) return esc(text);
+  let out = '', prev = 0;
+  for (const sp of spans){
+    if (sp[0] < prev) continue;
+    out += esc(text.slice(prev, sp[0])) + '<mark>' + esc(text.slice(sp[0], sp[1])) + '</mark>';
+    prev = sp[1];
+  }
+  return out + esc(text.slice(prev));
+}
+
+function tableHTML(t){
+  const cap = t.title ? '<caption>' + esc(t.title) + '</caption>' : '';
+  const head = '<thead><tr>' + t.header.map(h => '<th>' + esc(h) + '</th>').join('') + '</tr></thead>';
+  const body = '<tbody>' + t.rows.map(r =>
+      '<tr>' + r.map(c => '<td>' + esc(c) + '</td>').join('') + '</tr>').join('') + '</tbody>';
+  return '<div class="tablewrap"><table class="phbtable">' + cap + head + body + '</table></div>';
+}
+
+function descHTML(s){
+  return s.desc.split(/\n{2,}/).map(chunk => {
+    const t = chunk.trim();
+    if (!t) return '';
+    const m = /^@@TABLE(\d+)@@$/.exec(t);
+    if (m){ const tb = s.tables[+m[1]]; return tb ? tableHTML(tb) : ''; }
+    if (t.charAt(0) === '•') return '<p class="bullet">' + esc(t.slice(1).trim()) + '</p>';
+    if (t.indexOf('升环施法效应') === 0) return '<p class="upcast">' + esc(t) + '</p>';
+    return '<p>' + esc(t) + '</p>';
+  }).join('');
+}
+
+/* ---------- detail ---------- */
+const detailEl = document.getElementById('detail');
+
+function welcomeHTML(){
+  return '<div class="welcome">'
+    + '<h2>输入法术名的一部分即可开始</h2>'
+    + '<p>这本书第 11 章按字母序列出了全部法术。在上面的搜索框里敲下任意片段——一个汉字、几个字母、一段拼音都行——'
+    + '下方的结果会列出所有可能的法术，输入框上方还会浮出即时联想。命中的字会以<span style="color:var(--red);font-weight:700">红色</span>标出。</p>'
+    + '<div class="rule"></div>'
+    + '<ul>'
+    + '<li><b>中文名</b>：<code>火</code> → 火球术、火焰箭、火墙术…</li>'
+    + '<li><b>英文名</b>：<code>wall of</code> → 力场墙、火墙术、冰墙术…</li>'
+    + '<li><b>拼音全拼</b>：<code>huoqiu</code> → 火球术</li>'
+    + '<li><b>拼音首字母</b>：<code>hqs</code> → 火球术</li>'
+    + '<li><b>筛选</b>：按环阶、学派、职业逐层收窄结果</li>'
+    + '</ul>'
+    + '<div class="examples">'
+    + ['火球术','隐形','治疗','wall','雷'].map(n => '<button class="ex-btn" data-q="' + n + '">' + n + '</button>').join('')
+    + '</div>'
+    + '<div class="src">数据来源：《玩家手册》中译 v1.72，第 11 章（第 211–289 页），共 ' + SPELLS.length + ' 个法术。</div>'
+    + '</div>';
+}
+
+function renderDetail(){
+  const s = state.sel;
+  if (!s){ detailEl.innerHTML = welcomeHTML(); return; }
+  const meta = s.meta || {};
+  const badges = [
+    '<span class="badge lv">' + esc(s._lvl) + '</span>',
+    '<span class="badge school">' + esc(s.school) + '</span>'
+  ];
+  if (s.ritual) badges.push('<span class="badge ritual">仪式</span>');
+  for (const c of s.classes) badges.push('<span class="badge cls">' + esc(c) + '</span>');
+  badges.push('<span class="badge page">PHB 第 ' + s.page + ' 页</span>');
+
+  const fields = [['施法时间', meta['施法时间']], ['施法距离', meta['施法距离']],
+                  ['法术成分', meta['法术成分']], ['持续时间', meta['持续时间']]];
+  const metaHTML = '<div class="meta">' + fields.map(f =>
+      '<div><dt>' + f[0] + '</dt><dd>' + esc(f[1] || '—') + '</dd></div>').join('') + '</div>';
+
+  detailEl.innerHTML =
+    '<div class="d-head">'
+    + '<h2 class="d-title">' + esc(s.zh) + '</h2>'
+    + '<div class="d-en">' + esc(s.en) + '<span class="d-py">' + esc(s._toks.join(' ')) + '</span></div>'
+    + '<div class="d-badges">' + badges.join('') + '</div>'
+    + '</div>'
+    + metaHTML
+    + '<div class="desc">' + descHTML(s) + '</div>';
+  detailEl.scrollTop = 0;
+}
+
+/* ---------- list ---------- */
+const listEl = document.getElementById('list');
+const countEl = document.getElementById('count');
+const emptyEl = document.getElementById('empty');
+
+function renderList(){
+  const rows = state.results;
+  listEl.innerHTML = rows.map((r, i) => {
+    const s = r.s;
+    const sel = state.sel && state.sel.zh === s.zh ? ' sel' : '';
+    return '<li class="row' + sel + '" data-i="' + i + '" role="option" title="' + esc(s.zh + ' · ' + s.en) + '">'
+      + '<span class="lv">' + esc(s._lvl) + '</span>'
+      + '<span class="nm">' + hi(s.zh, r.zh)
+      + '<span class="en">' + hi(s.en, r.en) + '</span></span>'
+      + '<span class="sc">' + esc(s.school) + (s.ritual ? ' · 仪式' : '') + '</span>'
+      + '</li>';
+  }).join('');
+
+  const total = SPELLS.length;
+  if (!state.query){
+    countEl.innerHTML = '全部 <b>' + rows.length + '</b> 个法术 · 按英文名排序';
+  } else {
+    countEl.innerHTML = '匹配 <b>' + rows.length + '</b> / ' + total + ' 个法术';
+  }
+  const none = rows.length === 0;
+  emptyEl.classList.toggle('show', none);
+  if (none){
+    const q = state.query.trim();
+    let extra = '';
+    if (SCHOOLS.indexOf(q) >= 0){
+      extra = '<div class="ex-wrap"><button class="ex-btn" data-school="' + esc(q) + '">按学派筛选「' + esc(q) + '」</button></div>';
+    } else if (CLASSES.indexOf(q) >= 0){
+      extra = '<div class="ex-wrap"><button class="ex-btn" data-class="' + esc(q) + '">按职业筛选「' + esc(q) + '法术」</button></div>';
+    }
+    emptyEl.innerHTML = '没有找到匹配「' + esc(state.query) + '」的法术。<br>'
+      + '试试只输入其中一个字，或改用英文名 / 拼音；按 <kbd>Esc</kbd> 可清空条件。'
+      + extra;
+  }
+}
+
+/* ---------- suggestions ---------- */
+const sgEl = document.getElementById('suggest');
+const inputEl = document.getElementById('q');
+const MAXSG = 8;
+
+function renderSuggest(forceOpen){
+  if (!state.query || (document.activeElement !== inputEl && !forceOpen) || state.results.length === 0){
+    sgEl.hidden = true; inputEl.setAttribute('aria-expanded', 'false'); return;
+  }
+  const items = state.results.slice(0, MAXSG);
+  sgEl.innerHTML = items.map((r, i) => {
+    const s = r.s;
+    const act = i === state.active ? 'true' : 'false';
+    return '<div class="sg" role="option" id="sg-' + i + '" aria-selected="' + act + '" data-i="' + i + '">'
+      + '<span class="lv">' + esc(s._lvl) + '</span>'
+      + '<span class="nm">' + hi(s.zh, r.zh) + '<span class="en">' + hi(s.en, r.en) + '</span></span>'
+      + '<span class="sc">' + esc(s.school) + (s.ritual ? ' · 仪式' : '') + '</span>'
+      + '</div>';
+  }).join('')
+  + '<div class="sg-foot"><span>↑↓ 选择</span><span>Enter 查看</span><span>Esc 关闭</span>'
+  + (state.results.length > items.length ? '<span>共 ' + state.results.length + ' 个结果</span>' : '')
+  + '</div>';
+  sgEl.hidden = false;
+  inputEl.setAttribute('aria-expanded', 'true');
+  inputEl.setAttribute('aria-activedescendant', state.active >= 0 ? 'sg-' + state.active : '');
+}
+
+/* ---------- update cycle ---------- */
+function update(){
+  const all = search(state.query);
+  state.results = all.filter(r => passFilter(r.s));
+  state.active = state.results.length ? Math.min(Math.max(state.active, 0), Math.min(state.results.length, MAXSG) - 1) : -1;
+  if (state.sel && !state.results.some(r => r.s.zh === state.sel.zh)){
+    // keep the selected spell visible in the detail pane; just don't highlight a row
+  }
+  renderList();
+  renderSuggest(false);
+  document.getElementById('searchbox').classList.toggle('has-value', !!inputEl.value);
+}
+
+function selectSpell(s, opts){
+  state.sel = s;
+  renderDetail();
+  renderList();
+  if (!opts || !opts.keepSuggest) { sgEl.hidden = true; inputEl.setAttribute('aria-expanded', 'false'); }
+  if (!opts || !opts.noScroll){
+    if (window.innerWidth <= 900){ detailEl.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  }
+}
+
+/* ---------- events ---------- */
+let composing = false;
+inputEl.addEventListener('compositionstart', () => { composing = true; });
+inputEl.addEventListener('compositionend', () => { composing = false; state.active = -1; state.query = inputEl.value; update(); });
+
+inputEl.addEventListener('input', () => {
+  if (composing) return;
+  state.query = inputEl.value;
+  state.active = -1;
+  update();
+});
+
+inputEl.addEventListener('focus', () => renderSuggest(true));
+document.addEventListener('click', e => {
+  if (!document.getElementById('searchbox').contains(e.target)) { sgEl.hidden = true; }
+});
+
+inputEl.addEventListener('keydown', e => {
+  const open = !sgEl.hidden;
+  if (e.key === 'ArrowDown'){
+    e.preventDefault();
+    if (!open){ state.active = 0; renderSuggest(true); }
+    else { state.active = Math.min(state.active + 1, Math.min(state.results.length, MAXSG) - 1); renderSuggest(true); }
+  } else if (e.key === 'ArrowUp'){
+    e.preventDefault();
+    if (open){ state.active = Math.max(state.active - 1, 0); renderSuggest(true); }
+  } else if (e.key === 'Enter'){
+    if (open && state.results.length){
+      e.preventDefault();
+      selectSpell(state.results[Math.max(state.active, 0)].s);
+      if (window.innerWidth > 900) inputEl.blur();
+    }
+  } else if (e.key === 'Escape'){
+    if (open){ sgEl.hidden = true; }
+    else { inputEl.value = ''; state.query = ''; state.sel = null; renderDetail(); update(); }
+  }
+});
+
+sgEl.addEventListener('mousedown', e => { e.preventDefault(); });
+sgEl.addEventListener('click', e => {
+  const row = e.target.closest('.sg');
+  if (!row) return;
+  const r = state.results[+row.dataset.i];
+  if (r) selectSpell(r.s);
+});
+
+listEl.addEventListener('click', e => {
+  const row = e.target.closest('.row');
+  if (!row) return;
+  const r = state.results[+row.dataset.i];
+  if (r) selectSpell(r.s);
+});
+
+detailEl.addEventListener('click', e => {
+  const b = e.target.closest('.ex-btn');
+  if (!b) return;
+  inputEl.value = b.dataset.q || '';
+  state.query = b.dataset.q || '';
+  state.active = -1;
+  update();
+  if (state.results.length){ selectSpell(state.results[0].s, {noScroll:true}); }
+  inputEl.focus({ preventScroll: true });
+});
+
+emptyEl.addEventListener('click', e => {
+  const b = e.target.closest('.ex-btn');
+  if (!b) return;
+  inputEl.value = ''; state.query = ''; state.active = -1;
+  if (b.dataset.school){
+    state.school = b.dataset.school;
+    document.getElementById('schoolSel').value = b.dataset.school;
+  } else if (b.dataset.class){
+    state.cls = b.dataset.class;
+    document.getElementById('classSel').value = b.dataset.class;
+  }
+  update();
+});
+
+document.getElementById('clear').addEventListener('click', () => {
+  inputEl.value = ''; state.query = ''; state.active = -1;
+  state.sel = null; renderDetail(); update(); inputEl.focus();
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === '/' && document.activeElement !== inputEl){
+    e.preventDefault(); inputEl.focus(); inputEl.select();
+  }
+});
+
+/* ---------- filters UI ---------- */
+const chipsEl = document.getElementById('levelChips');
+const lvDefs = [['all', '全部'], [0, '戏法'], [1, '1 环'], [2, '2 环'], [3, '3 环'], [4, '4 环'],
+                [5, '5 环'], [6, '6 环'], [7, '7 环'], [8, '8 环'], [9, '9 环']];
+chipsEl.innerHTML = lvDefs.map(d =>
+  '<button class="chip' + (d[0] === 'all' ? ' on' : '') + '" data-lv="' + d[0] + '">' + d[1] + '</button>').join('');
+chipsEl.addEventListener('click', e => {
+  const c = e.target.closest('.chip'); if (!c) return;
+  state.level = c.dataset.lv === 'all' ? 'all' : +c.dataset.lv;
+  [...chipsEl.children].forEach(x => x.classList.toggle('on', x === c));
+  update();
+});
+
+const schoolSel = document.getElementById('schoolSel');
+schoolSel.innerHTML = '<option value="all">全部学派</option>'
+  + SCHOOLS.map(s => '<option value="' + s + '">' + s + '</option>').join('');
+schoolSel.addEventListener('change', () => { state.school = schoolSel.value; update(); });
+
+const classSel = document.getElementById('classSel');
+classSel.innerHTML = '<option value="all">全部职业</option>'
+  + CLASSES.map(c => '<option value="' + c + '">' + c + '法术</option>').join('');
+classSel.addEventListener('change', () => { state.cls = classSel.value; update(); });
+
+document.getElementById('ritualOnly').addEventListener('change', e => { state.ritual = e.target.checked; update(); });
+
+/* ---------- boot ---------- */
+document.getElementById('total').textContent = SPELLS.length;
+SPELLS.sort((a, b) => a.en.localeCompare(b.en));
+
+// #q=关键词 直接进入某个检索（方便分享/收藏）
+const m0 = /(?:^|[#&])q=([^&]*)/.exec(location.hash || '');
+if (m0){
+  const v = decodeURIComponent(m0[1]);
+  inputEl.value = v;
+  state.query = v;
+}
+renderDetail();
+update();
+if (state.query && state.results.length){
+  selectSpell(state.results[0].s, { keepSuggest: true, noScroll: true });
+}
+
+// 轻量外部接口，方便在控制台里调试或二次开发
+window.PHB = { spells: SPELLS, search: search, select: selectSpell, state: state };
+})();
+</script>
+</body>
+</html>
